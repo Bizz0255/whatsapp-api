@@ -52,7 +52,7 @@ async function startWhatsApp() {
 
 startWhatsApp();
 
-// Serve QR code using a free public API (No extra npm packages needed!)
+// Serve QR code using a free public API
 app.get('/qr', (req, res) => {
     if (isReady) {
         res.send('<h1 style="text-align:center; font-family:Arial; color:green;">✅ WhatsApp is already connected!</h1><p style="text-align:center;">You can now send messages via your PHP app.</p>');
