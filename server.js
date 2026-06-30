@@ -5,7 +5,6 @@ const {
     DisconnectReason
 } = require('@whiskeysockets/baileys');
 const pino = require('pino');
-const QRCode = require('qrcode');
 const axios = require('axios');
 
 const app = express();
@@ -53,10 +52,10 @@ async function startWhatsApp() {
 
 startWhatsApp();
 
-// Serve QR code as a scannable web page
-app.get('/qr', async (req, res) => {
+// Serve QR code using a free public API (No extra npm packages needed!)
+app.get('/qr', (req, res) => {
     if (isReady) {
-        res.send('<h1 style="text-align:center; font-family:Arial;">✅ WhatsApp is already connected!</h1>');
+        res.send('<h1 style="text-align:center; font-family:Arial; color:green;">✅ WhatsApp is already connected!</h1><p style="text-align:center;">You can now send messages via your PHP app.</p>');
         return;
     }
 
@@ -65,45 +64,43 @@ app.get('/qr', async (req, res) => {
         return;
     }
 
-    try {
-        const qrImage = await QRCode.toDataURL(currentQR);
-        res.send(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>WhatsApp QR Code</title>
-                <style>
-                    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f0f0f0; }
-                    .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: inline-block; max-width: 500px; }
-                    h1 { color: #25D366; }
-                    img { max-width: 300px; margin: 20px 0; border: 5px solid #25D366; border-radius: 10px; }
-                    .instructions { background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: left; }
-                    .warning { color: red; font-weight: bold; }
-                </style>
-                <meta http-equiv="refresh" content="20">
-            </head>
-            <body>
-                <div class="container">
-                    <h1>📱 Scan QR Code with WhatsApp</h1>
-                    <img src="${qrImage}" alt="QR Code">
-                    <div class="instructions">
-                        <h3>How to scan:</h3>
-                        <ol>
-                            <li>Open <strong>WhatsApp</strong> on your phone</li>
-                            <li>Go to <strong>Settings</strong> → <strong>Linked Devices</strong></li>
-                            <li>Tap <strong>Link a Device</strong></li>
-                            <li>Point your phone at this QR code</li>
-                        </ol>
-                        <p class="warning">⚠️ Use a SECONDARY WhatsApp number!</p>
-                        <p><em>This page auto-refreshes every 20 seconds.</em></p>
-                    </div>
+    // Generate QR code image URL using free public API
+    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentQR)}`;
+
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>WhatsApp QR Code</title>
+            <style>
+                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f0f0f0; }
+                .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: inline-block; max-width: 500px; }
+                h1 { color: #25D366; }
+                img { max-width: 300px; margin: 20px 0; border: 5px solid #25D366; border-radius: 10px; }
+                .instructions { background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: left; }
+                .warning { color: red; font-weight: bold; }
+            </style>
+            <meta http-equiv="refresh" content="20">
+        </head>
+        <body>
+            <div class="container">
+                <h1>📱 Scan QR Code with WhatsApp</h1>
+                <img src="${qrImageUrl}" alt="QR Code">
+                <div class="instructions">
+                    <h3>How to scan:</h3>
+                    <ol>
+                        <li>Open <strong>WhatsApp</strong> on your phone</li>
+                        <li>Go to <strong>Settings</strong> → <strong>Linked Devices</strong></li>
+                        <li>Tap <strong>Link a Device</strong></li>
+                        <li>Point your phone at this QR code</li>
+                    </ol>
+                    <p class="warning">⚠️ Use a SECONDARY WhatsApp number!</p>
+                    <p><em>This page auto-refreshes every 20 seconds.</em></p>
                 </div>
-            </body>
-            </html>
-        `);
-    } catch (error) {
-        res.status(500).send('Error generating QR code: ' + error.message);
-    }
+            </div>
+        </body>
+        </html>
+    `);
 });
 
 // Send invitation (text + image)
